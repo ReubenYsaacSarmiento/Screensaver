@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Spinning Sphere</title>
+    <title>ScreenSaver</title>
     <style>
         #canvas {
             display: block;
@@ -16,20 +16,24 @@
     </style>
 </head>
 <body>
+    <div id="controls">
+        <label for="speed-slider">Translation Speed:</label>
+        <input type="range" id="speed-slider" min="0.01" max="5" step="0.01" value="0.01">
+        <br>
+        <label for="zoom-slider">Zoom:</label>
+        <input type="range" id="zoom-slider" min="0.3" max="4" step="0.1" value="0.5">
+        <br>
+        <label for="shiny-slider">Shiny Slider:</label>
+        <input type="range" id="shiny-slider" min="1" max="100" value="5" step="1">
+        <br>
+        <label for="rotation-slider">Rotation Z Slider:</label>
+        <input type="range" id="rotation-slider" min="0" max="360" value="5" step="1">
+        <br>    
+    </div>
     <canvas id="canvas" width = "1920" height = "1080"></canvas>
     
     
-    <div id="controls">
-        <label for="speed-slider">Translation Speed:</label>
-        <input type="range" id="speed-slider" min="0" max="5" step="0.01" value="0.01">
-        <br>
-        <label for="zoom-slider">Zoom:</label>
-        <input type="range" id="zoom-slider" min="0.5" max="4" step="0.1" value="0.5">
-        <br>
-        <label for="rotation-slider">Camera Rotation Z:</label>
-          <input type="range" id="rotation-slider" min="0" max="360" value="0" step="1">
-          <br>
-    </div>
+    
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"></script>
     <script>
@@ -134,13 +138,13 @@
         gl.viewport(0, 0, canvasWidth, canvasHeight);
         gl.enable(gl.DEPTH_TEST);
 
-        //array of spheres
+        // Array of spheres position
         const spherePositions = [];
         // Array to store sphere vertex data
         const duplicatedSpheres = [];
         // Define sphere properties
         const radius = 0.5;
-        const segments = 15;
+        const segments = 16;
         const sphereVertices = createSphereVertices(radius, segments);
 
         // Create vertex buffer and bind the sphere vertices
@@ -161,10 +165,10 @@
 
         // Set up lighting properties
         const lightDirection = vec3.fromValues(0.5, 0.5, 1.0);
-        const ambientColor = vec3.fromValues(0.3, 0.3, 0.3);
-        const diffuseColor = vec3.fromValues(1.0, 1.0, 1.0);
-        const specularColor = vec3.fromValues(0.4, 0.4, 0.0);
-        const shininess = 100.0;
+        const ambientColor = getRandomColor();
+        const diffuseColor = vec3.fromValues(1.0, 0.0, 0.0);
+        const specularColor = vec3.fromValues(0.5, 0.5, 0.25);
+        let shininess = 5;
 
         const projectionMatrix = mat4.create();
         mat4.perspective(projectionMatrix, Math.PI / 4, canvasWidth / canvasHeight, 0.1, 100.0);
@@ -174,6 +178,7 @@
         let rotationZR = 0;
         let rotation = 0;
         let rotation2 = 0;
+        let rotation3 = 0;
         let translation = vec3.create();
         let translationStep = vec3.create();
         let translationBounds = {
@@ -182,11 +187,13 @@
             minY: -3.25,
             maxY: 3.5
         };
+        // Number
+        let randomAnimNumber
         //const vertexCount = 200;
         
         // speed slider element
-         const speedSlider = document.getElementById('speed-slider');
-         const rotationSlider = document.getElementById('rotation-slider');
+         const speedSlider = document.getElementById("speed-slider");
+         const shinySlider = document.getElementById("shiny-slider");
          // zoom slider element
         const zoomSlider = document.getElementById('zoom-slider');
         const modelViewMatrix = mat4.create();
@@ -195,11 +202,13 @@
         let zoomLevel = parseFloat(zoomSlider.value);
         let isDragging = false;
         let previousMouseX = 0;
+        let previousMouseY = 0;
         translationStep = randomizeTranslationDirection(translationStep);
         // Function to handle mouse down event
         function handleMouseDown(event) {
             isDragging = true;
             previousMouseX = event.clientX;
+            previousMouseY = event.clientY;
         }
 
         // Function to handle mouse up event
@@ -214,11 +223,20 @@
             }
 
             const deltaX = event.clientX - previousMouseX;
+            const deltaY = event.clientY - previousMouseY;
             rotation2 += deltaX * 0.01;
+            rotation3 += deltaY * 0.01;
             previousMouseX = event.clientX;
+             previousMouseY = event.clientY;
         }
-
-        
+        // Generates a random color
+        function getRandomColor() {
+            return [
+                Math.random(),
+                Math.random(),
+                Math.random()
+            ];
+        }
        // Function to handle mouse click event
         function handleMouseClick(event) {
             if(spheres.length <30){
@@ -243,23 +261,24 @@
                 const invViewMatrix = mat4.create();
                 mat4.invert(invViewMatrix, modelViewMatrix);
                 const worldPos = vec3.transformMat4(vec3.create(), [eyeX, eyeY, eyeZ], invViewMatrix);
-
+                const randomColor = getRandomColor();
                 // Generate random translation for the new sphere
                 const randomPosition = vec3.fromValues(
-                    Math.random() * 4 - 2,
-                    Math.random() * 4 - 2,
-                    Math.random() * 6 - 10
+                    Math.random()*4-2,
+                    Math.random() *4-2,
+                    Math.random()
                 );
                 const randomTranslation = vec3.fromValues(
-                    Math.random() * 10 - 2,
-                    Math.random() * 10 - 2,
-                    Math.random() * 6 - 10
+                    Math.random(),
+                    Math.random(),
+                    Math.random()
                 );
 
                 // Create a new sphere with the randomized translation
                 const newSphere = {
                     position: randomPosition,
-                    vertices: createSphereVertices(0.5, 15),
+                    vertices: createSphereVertices(0.5, 32),
+                    color: randomColor,
                     translation: randomTranslation,
                     translationStep: randomizeTranslationDirection(translationDirection)
                 };
@@ -268,10 +287,11 @@
                 spheres.push(newSphere);
             }
         }
-        rotationSlider.addEventListener('input', function(event) {
-          rotationZ = event.target.value;
+        //shiny slider
+        shinySlider.addEventListener('input', function(event) {
+          shininess = event.target.value;
           // Convert rotationZ to radians if necessary
-          rotationZR = rotationZ * (Math.PI / 180);
+          gl.uniform1f(shininessLocation, shininess);
           
          
           
@@ -295,20 +315,26 @@
                     vec3.scaleAndAdd(sphere.translation, sphere.translation, sphere.translationStep, translationSpeed);
                 }
         }
+        let startDate = new Date();
         // Render loop
         function render() {
+            let endDate = new Date();
+            if(((endDate - startDate)/1000) >=10){
+                randomAnimNumber = Math.floor(Math.random() * 3);
+                startDate = new Date(); 
+            }
             // Clear the canvas
-            gl.clearColor(0,0,0,1);
+            gl.clearColor(0.0,0.8,0.8,0.2);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
             // Model View Matrix
             const modelViewMatrix = mat4.create();
-            mat4.rotateZ(modelViewMatrix, modelViewMatrix, rotationZR);
+            mat4.rotateZ(modelViewMatrix, modelViewMatrix, rotation);
             mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, -5]);
             mat4.rotateY(modelViewMatrix, modelViewMatrix, rotation);
             mat4.rotateX(modelViewMatrix, modelViewMatrix, rotation);
             mat4.rotateY(modelViewMatrix, modelViewMatrix, rotation2);
-            mat4.rotateX(modelViewMatrix, modelViewMatrix, rotation2);
+            mat4.rotateX(modelViewMatrix, modelViewMatrix, rotation3);
             const zoomFactor = zoomLevel;
             mat4.perspective(projectionMatrix, Math.PI / (4 * zoomFactor), canvas.width / canvas.height, 0.1, 100.0);
             // Normal Matrix
@@ -332,7 +358,7 @@
             gl.uniform1f(shininessLocation, shininess);
 
             // Draw object
-            gl.drawArrays(gl.TRIANGLES, 0, sphereVertices.length / 6);
+            gl.drawArrays(gl.TRIANGLES, 0, sphereVertices.length / 3);
             // Render the spheres
              
 
@@ -343,12 +369,14 @@
                 mat4.identity(modelViewMatrix);
                 mat4.rotateY(modelViewMatrix, modelViewMatrix, rotation);
                 mat4.rotateX(modelViewMatrix, modelViewMatrix, rotation);
+                mat4.rotateY(modelViewMatrix, modelViewMatrix, rotation2);
+                mat4.rotateX(modelViewMatrix, modelViewMatrix, rotation3);
                 mat4.rotateZ(modelViewMatrix, modelViewMatrix, rotationZR);
                 
 
                 mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, -5]);
                 
-                vec3.add(sphere.translation, sphere.translation, vec3.scale(vec3.create(), translationStep, translationSpeed));
+                vec3.add(sphere.translation, sphere.translation, vec3.scale(vec3.create(), sphere.translationStep, translationSpeed));
                 mat4.translate(modelViewMatrix, modelViewMatrix, sphere.translation);
                 handleBoundaryCollisionDuplicate(sphere);
                 mat4.translate(modelViewMatrix, modelViewMatrix, sphere.position);
@@ -356,7 +384,7 @@
                 // Set the uniforms for rendering the sphere
                 gl.uniformMatrix4fv(modelViewMatrixLocation, false, modelViewMatrix);
                 gl.uniformMatrix3fv(normalMatrixLocation, false, mat3.normalFromMat4(mat3.create(), modelViewMatrix));
-
+                gl.uniform3fv(ambientColorLocation, sphere.color); // Set the color uniform
                 // Draw the sphere
                 gl.drawArrays(gl.TRIANGLES, 0, sphere.vertices.length / 8);
 
@@ -365,8 +393,13 @@
            
 
             // Update rotation for animation
-            rotation += 0.01;
-            rotation2+=0.01;
+
+            if(randomAnimNumber == 1){
+               rotationZR += 0.01;
+            }else if(randomAnimNumber == 2){
+               rotation += 0.01;
+            }
+            
             // Request the next frame
             requestAnimationFrame(render);
         }
@@ -377,7 +410,7 @@
 
         // Function to handle boundary collision
         function handleBoundaryCollision() {
-            const radius = 1.0;
+            const radius = 0.5;
             const sphereLeft = translation[0] - radius;
             const sphereRight = translation[0] + radius;
             const sphereTop = translation[1] + radius;
@@ -391,6 +424,7 @@
                 translationStep[1] *= -1; // Reverse vertical translation
             }
         }
+        //for duplicate spheres
          function handleBoundaryCollisionDuplicate(sphere) {
             const radius = 1.0;
             const sphereLeft = sphere.translation[0] - radius;
